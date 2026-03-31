@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>회원가입 테스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f6f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            width: 360px;
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d0d5dd;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 12px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+
+        .error {
+            color: #dc2626;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .success {
+            color: #16a34a;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>회원가입</h1>
+
+    <form id="registerForm">
+        <div class="form-group">
+            <label for="username">아이디</label>
+            <input type="text" id="username" name="username" required />
+        </div>
+
+        <div class="form-group">
+            <label for="password">비밀번호</label>
+            <input type="password" id="password" name="password" required />
+        </div>
+
+        <div class="form-group">
+            <label for="name">이름</label>
+            <input type="text" id="name" name="name" required />
+        </div>
+
+        <button type="submit">회원가입</button>
+    </form>
+
+    <div id="message"></div>
+    <div id="result" class="result" style="display:none;"></div>
+</div>
+
+<script>
+    const form = document.getElementById("registerForm");
+    const messageDiv = document.getElementById("message");
+    const resultDiv = document.getElementById("result");
+
+    form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        messageDiv.className = "";
+        messageDiv.textContent = "";
+        resultDiv.style.display = "none";
+        resultDiv.textContent = "";
+
+        const data = {
+            username: document.getElementById("username").value,
+            password: document.getElementById("password").value,
+            name: document.getElementById("name").value
+        };
+
+        try {
+            const response = await fetch("http://localhost:8080/auth/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+
+            const responseText = await response.text();
+            let responseData;
+
+            try {
+                responseData = JSON.parse(responseText);
+            } catch {
+                responseData = responseText;
+            }
+
+            if (!response.ok) {
+                messageDiv.className = "error";
+                messageDiv.textContent = `회원가입 실패 (status: ${response.status})`;
+                resultDiv.style.display = "block";
+                resultDiv.textContent = typeof responseData === "string"
+                    ? responseData
+                    : JSON.stringify(responseData, null, 2);
+                return;
+            }
+
+            messageDiv.className = "success";
+            messageDiv.textContent = "회원가입 성공";
+            resultDiv.style.display = "block";
+            resultDiv.textContent = JSON.stringify(responseData, null, 2);
+
+        } catch (error) {
+            messageDiv.className = "error";
+            messageDiv.textContent = "서버 요청 중 오류가 발생했습니다.";
+            resultDiv.style.display = "block";
+            resultDiv.textContent = error.message;
+        }
+    });
+</script>
+</body>
+</html>
