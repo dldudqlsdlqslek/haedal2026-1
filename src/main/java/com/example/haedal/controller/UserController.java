@@ -2,35 +2,60 @@ package com.example.haedal.controller;
 
 
 import com.example.haedal.domain.User;
-import com.example.haedal.dto.UserRegistrationRequestDto;
-import com.example.haedal.dto.UserSimpleResponseDto;
+import com.example.haedal.dto.request.UserUpdateRequestDto;
+import com.example.haedal.dto.response.UserDetailResponseDto;
+import com.example.haedal.dto.response.UserSimpleResponseDto;
+import com.example.haedal.service.AuthService;
 import com.example.haedal.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 public class UserController {
     private final UserService userService;
+    private final AuthService authService;
 
     @Autowired
-    public UserController(UserService userService) {
+    public UserController(UserService userService,  AuthService authService) {
         this.userService = userService;
+        this.authService = authService;
     }
 
-    @PostMapping("/auth/register")
-    public ResponseEntity<UserSimpleResponseDto> registerUser(@RequestBody UserRegistrationRequestDto userRegistrationRequestDto) {
-        User user = new User(
-                userRegistrationRequestDto.getUsername(),
-                userRegistrationRequestDto.getPassword(),
-                userRegistrationRequestDto.getName()
-        );
-        UserSimpleResponseDto savedUser = userService.saveUser(user);
+    @GetMapping("/users")
+    public ResponseEntity<List<UserSimpleResponseDto>> getUsers(@RequestParam(required = false) String username, HttpServletRequest request) {
+        User currentUser = authService.getCurrentUser(request);
 
-        return ResponseEntity.ok(savedUser);
+        List<UserSimpleResponseDto> users;
+        if (username == null || username.isEmpty()) {
+            users = userService.getAllUsers(currentUser);
+        } else {
+            users = userService.getUserByUsername(currentUser, username);
+        }
+
+        return ResponseEntity.ok(users);
     }
+
+    @GetMapping("/users/{userId}/profile")
+    public ResponseEntity<UserDetailResponseDto> getUserProfile(@PathVariable Long userId, HttpServletRequest request) {
+        User currentUser = authService.getCurrentUser(request);
+
+        UserDetailResponseDto userDetailResponseDto = userService.getUserDetail(currentUser, userId);
+
+        return ResponseEntity.ok(userDetailResponseDto);
+    }
+
+    @PutMapping("/users/profile")
+    public ResponseEntity<UserDetailResponseDto> updateUser(@RequestBody UserUpdateRequestDto userUpdateRequestDto, HttpServletRequest request) {
+        User currentUser = authService.getCurrentUser(request);
+        UserDetailResponseDto updated = userService.updateUser(currentUser, userUpdateRequestDto);
+        return ResponseEntity.ok(updated);
+    }
+
+
 
 
 }
