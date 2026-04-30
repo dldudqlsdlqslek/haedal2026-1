@@ -5,6 +5,7 @@ import com.example.haedal.domain.User;
 import com.example.haedal.dto.request.UserUpdateRequestDto;
 import com.example.haedal.dto.response.UserDetailResponseDto;
 import com.example.haedal.dto.response.UserSimpleResponseDto;
+import com.example.haedal.repository.PostRepository;
 import com.example.haedal.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,10 +18,14 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PostRepository postRepository;
+    private final ImageService imageService;
 
     @Autowired
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, ImageService imageService,  PostRepository postRepository) {
         this.userRepository = userRepository;
+        this.postRepository = postRepository;
+        this.imageService = imageService;
     }
 
 
@@ -81,15 +86,19 @@ public class UserService {
 
 
     public UserDetailResponseDto convertUserToDetailDto(User currentUser, User targetUser) {
+        String imageUrl = targetUser.getImageUrl();
+        String imageData = imageService.encodeImageToBase64(System.getProperty("user.dir") + "/src/main/resources/static/" + imageUrl);
+
+
         return new UserDetailResponseDto(
                 targetUser.getId(),
                 targetUser.getUsername(),
                 targetUser.getName(),
-                null,
+                imageData,
                 false,
                 targetUser.getBio(),
                 targetUser.getJoinedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm")),
-                0L,
+                postRepository.countByUser(targetUser),
                 0L,
                 0L
         );
@@ -99,11 +108,14 @@ public class UserService {
 
 
     public UserSimpleResponseDto convertUserToSimpleDto(User currentUser, User targetUser) {
+        String imageUrl = targetUser.getImageUrl();
+        String imageData = imageService.encodeImageToBase64(System.getProperty("user.dir") + "/src/main/resources/static/" + imageUrl);
+
         return new UserSimpleResponseDto(
                 targetUser.getId(),
                 targetUser.getUsername(),
                 targetUser.getName(),
-                null,
+                imageData,
                 false
                 );
     }
