@@ -5,6 +5,7 @@ import com.example.haedal.domain.User;
 import com.example.haedal.dto.request.UserUpdateRequestDto;
 import com.example.haedal.dto.response.UserDetailResponseDto;
 import com.example.haedal.dto.response.UserSimpleResponseDto;
+import com.example.haedal.repository.FollowRepository;
 import com.example.haedal.repository.PostRepository;
 import com.example.haedal.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,12 +21,14 @@ public class UserService {
     private final UserRepository userRepository;
     private final PostRepository postRepository;
     private final ImageService imageService;
+    private final FollowRepository followRepository;
 
     @Autowired
-    public UserService(UserRepository userRepository, ImageService imageService,  PostRepository postRepository) {
+    public UserService(UserRepository userRepository, ImageService imageService,  PostRepository postRepository,  FollowRepository followRepository) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
         this.imageService = imageService;
+        this.followRepository = followRepository;
     }
 
 
@@ -95,12 +98,12 @@ public class UserService {
                 targetUser.getUsername(),
                 targetUser.getName(),
                 imageData,
-                false,
+                followRepository.existsByFollowerAndFollowing(currentUser, targetUser),
                 targetUser.getBio(),
                 targetUser.getJoinedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm")),
                 postRepository.countByUser(targetUser),
-                0L,
-                0L
+                followRepository.countByFollowing(targetUser),
+                followRepository.countByFollower(targetUser)
         );
     }
 
@@ -116,7 +119,7 @@ public class UserService {
                 targetUser.getUsername(),
                 targetUser.getName(),
                 imageData,
-                false
+                followRepository.existsByFollowerAndFollowing(currentUser, targetUser)
                 );
     }
 }
